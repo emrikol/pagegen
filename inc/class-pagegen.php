@@ -180,7 +180,7 @@ class Pagegen {
 
 		<canvas id="<?php echo esc_attr( self::WIDGET_ID ); ?>_canvas" style="height: 250px; width: 100%"></canvas>
 		<p><strong>Average:</strong> <code><?php echo esc_html( number_format( array_sum( $grand_average ) / count( $grand_average ), 2 ) ); ?>s</code></p>
-		<p><strong>Note:</strong> Page generation time is the server time including uncached database calls and any remote data fetched server side. It is not page load time, nor does the average include full HTML cached views. It does not include admin or REST API requests.</p>
+		<p><strong>Note:</strong> Page generation time is the server time including uncached database calls and any remote data fetched server side. It is not page load time, nor does the average include full HTML cached views.</p>
 		<script>
 			jQuery( function() {
 				var chart = new Chart( document.getElementById( '<?php echo esc_attr( self::WIDGET_ID ); ?>_canvas' ).getContext('2d'), {
@@ -220,7 +220,7 @@ class Pagegen {
 					$where_and = ' AND `is_admin`=true AND `is_cron`=false';
 					break;
 				case 'rest':
-					$where_and = ' AND `is_rest`=true AND `is_cron`=false;';
+					$where_and = ' AND `is_rest`=true AND `is_cron`=false';
 					break;
 				case 'cron':
 					$where_and = ' AND `is_cron`=true';
