@@ -65,6 +65,12 @@ class Pagegen {
 		add_action( 'wp_dashboard_setup', array( $this, 'wp_dashboard_setup' ) );
 		add_action( 'init', array( $this, 'register_cron' ) );
 		add_action( 'pagegen_purge', array( $this, 'pagegen_purge' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
+	}
+	/**
+	 * Registers ChartJS.
+	 */
+	public function admin_enqueue_scripts() {
 		wp_register_script( 'chartjs', 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js', array(), '2.7.3', true );
 	}
 
@@ -150,6 +156,11 @@ class Pagegen {
 			);
 		}
 
+		if ( empty( $grand_average ) ) {
+			echo '<p>No data yet!</p>';
+			return;
+		}
+
 		wp_enqueue_script( 'chartjs' );
 		?>
 
@@ -176,14 +187,6 @@ class Pagegen {
 					type: 'line',
 					data: {
 						labels: <?php echo wp_json_encode( $labels ); ?>,
-						/*datasets: [ {
-							label: "Average Page Generation Time",
-							backgroundColor: 'rgb(0, 115, 170)',
-							borderColor: 'rgb(0, 115, 170)',
-							cubicInterpolationMode: 'monotone',
-							fill: false,
-							data: <?php echo wp_json_encode( $average ); ?>,
-						} ],*/
 						datasets: <?php echo wp_json_encode( $datasets ); ?>
 					},
 				} );
