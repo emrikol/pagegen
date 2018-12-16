@@ -5,6 +5,7 @@
  * Version: 1.0
  * Author: Derrick Tennant
  * Author URI: https://emrikol.com/
+ * GitHub Plugin URI: https://github.com/emrikol/pagegen
  *
  * @package WordPress
  */
