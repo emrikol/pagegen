@@ -1,0 +1,15 @@
+# Development files
+package.json
+package-lock.json
+
+# Ignore temporary OS files
+.DS_Store
+.DS_Store?
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Composer (repo root only)
+/vendor/
+composer.lock

@@ -1,0 +1,24 @@
+{
+    "name": "emrikol/pagegen",
+    "description": "Generates a graph in the WordPress adming showing historic page generation times.",
+    "require": {
+        "php": ">=8.0"
+    },
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Derrick Tennant",
+            "email": "derrick.tennant@automattic.com"
+        }
+    ],
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "require-dev": {
+        "wp-coding-standards/wpcs": "^3.0",
+        "dealerdirect/phpcodesniffer-composer-installer": "^0.7",
+        "phpcompatibility/phpcompatibility-wp": "*"
+    }
+}

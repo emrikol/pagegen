@@ -33,11 +33,11 @@ class Pagegen {
 	 * @array STATS_TYPES
 	 */
 	const STATS_TYPES = array(
-		'pub'   => [ 'Public', '#0073AA' ],
-		'admin' => [ 'Admin', '#826EB4' ],
-		'rest'  => [ 'REST API', '#46B450' ],
-		'cron'  => [ 'Cron', '#00A0D2' ],
-		'all'   => [ 'All', '#191E23' ],
+		'pub'   => array( 'Public', '#0073AA' ),
+		'admin' => array( 'Admin', '#826EB4' ),
+		'rest'  => array( 'REST API', '#46B450' ),
+		'cron'  => array( 'Cron', '#00A0D2' ),
+		'all'   => array( 'All', '#191E23' ),
 	);
 
 	/**
@@ -95,14 +95,14 @@ class Pagegen {
 			update_option( 'pagegen_table', '1', false );
 		}
 
-		$data = [
+		$data = array(
 			'time'              => microtime( true ) - (float) $_SERVER['REQUEST_TIME_FLOAT'], // phpcs:ignore Generic.PHP.Syntax.PHPSyntax,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
 			'url'               => esc_url_raw( ( is_ssl() ? 'https' : 'http' ) . '://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 			'is_user_logged_in' => (bool) is_user_logged_in(),
-			'is_admin'          => (Bool) is_admin(),
+			'is_admin'          => (bool) is_admin(),
 			'is_rest'           => defined( 'REST_REQUEST' ) ? (bool) REST_REQUEST : false,
 			'is_cron'           => (bool) wp_doing_cron(),
-		];
+		);
 		$wpdb->insert( $table_name, $data ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 	}
 
@@ -117,9 +117,9 @@ class Pagegen {
 	 * Outputs the dashboard widget.
 	 */
 	public function generate_widget() {
-		$datasets      = [];
+		$datasets      = array();
 		$options       = self::get_dashboard_widget_options( self::WIDGET_ID );
-		$grand_average = [];
+		$grand_average = array();
 
 		foreach ( self::STATS_TYPES as $stats_type => $stats_type_data ) {
 			if ( ! $options[ $stats_type ] ) {
@@ -127,13 +127,13 @@ class Pagegen {
 			}
 
 			$stats   = self::get_data( $stats_type );
-			$labels  = [];
-			$data    = [];
-			$average = [];
-			$views   = [];
+			$labels  = array();
+			$data    = array();
+			$average = array();
+			$views   = array();
 
 			foreach ( $stats as $stat ) {
-				$labels[]        = date( 'n-j G', strtotime( $stat->day ) );
+				$labels[]        = gmdate( 'n-j G', strtotime( $stat->day ) );
 				$average[]       = $stat->average;
 				$views[]         = $stat->views;
 				$grand_average[] = $stat->average;
@@ -207,7 +207,7 @@ class Pagegen {
 
 		$last_time  = $time_stamp_end ? $time_stamp_end : time();
 		$first_time = $time_stamp_start ? $time_stamp_start : $last_time - ( DAY_IN_SECONDS * 30 );
-		$cache_key  = $stats_type . '-' . date( 'Y-m-d-H', $first_time ) . '-' . date( 'Y-m-d-H', $last_time );
+		$cache_key  = $stats_type . '-' . gmdate( 'Y-m-d-H', $first_time ) . '-' . gmdate( 'Y-m-d-H', $last_time );
 		$stats      = wp_cache_get( $cache_key, 'pagegen' );
 		$table_name = $wpdb->prefix . self::TABLE_NAME;
 
@@ -229,7 +229,7 @@ class Pagegen {
 					$where_and = '';
 					break;
 			}
-			$sql   = "SELECT AVG( `time` ) as `average`, COUNT( `time` ) as `views`, MAX( `time` ) as `max`, MIN( `time` ) as `min`, DATE_FORMAT( `timestamp`, '%Y-%m-%d' ) as `day` FROM `$table_name` WHERE `timestamp` BETWEEN '" . esc_sql( date( 'Y-m-d H:i:s', $first_time ) ) . "' AND '" . esc_sql( date( 'Y-m-d H:i:s', $last_time ) ) . "'" . $where_and . ' GROUP BY DATE( `timestamp` );';
+			$sql   = "SELECT AVG( `time` ) as `average`, COUNT( `time` ) as `views`, MAX( `time` ) as `max`, MIN( `time` ) as `min`, DATE_FORMAT( `timestamp`, '%Y-%m-%d' ) as `day` FROM `$table_name` WHERE `timestamp` BETWEEN '" . esc_sql( gmdate( 'Y-m-d H:i:s', $first_time ) ) . "' AND '" . esc_sql( gmdate( 'Y-m-d H:i:s', $last_time ) ) . "'" . $where_and . ' GROUP BY DATE( `timestamp` );';
 			$stats = $wpdb->get_results( $sql ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.PreparedSQL.NotPrepared
 			wp_cache_set( $cache_key, $stats, 'pagegen', HOUR_IN_SECONDS );
 		}
@@ -262,7 +262,7 @@ class Pagegen {
 	 * @return void
 	 */
 	public function pagegen_dashboard_widget_control() {
-		$options = [];
+		$options = array();
 		foreach ( self::STATS_TYPES as $stats_type => $stats_type_data ) {
 			if ( 'pub' === $stats_type ) {
 				// pub defaults to true.
@@ -322,28 +322,27 @@ class Pagegen {
 	/**
 	 * Gets one specific option for the specified widget.
 	 *
-	 * @param string $widget_id The widget ID to grab options for.
-	 * @param string $option    The option to grab.
-	 * @param string $default   The default option to return if none found.
+	 * @param string $widget_id   The widget ID to grab options for.
+	 * @param string $option      The option to grab.
+	 * @param string $default_val The default option to return if none found.
 	 *
 	 * @return string
 	 */
-	public static function get_dashboard_widget_option( $widget_id, $option, $default = null ) {
+	public static function get_dashboard_widget_option( $widget_id, $option, $default_val = null ) {
 
 		$opts = self::get_dashboard_widget_options( $widget_id );
 
 		// If widget opts dont exist, return false.
 		if ( ! $opts ) {
-			return $default;
+			return $default_val;
 		}
 
 		// Otherwise fetch the option or use default.
 		if ( isset( $opts[ $option ] ) && ! empty( $opts[ $option ] ) ) {
 			return $opts[ $option ];
 		} else {
-			return ( isset( $default ) ) ? $default : false;
+			return ( isset( $default_val ) ) ? $default_val : false;
 		}
-
 	}
 
 	/**
@@ -368,5 +367,4 @@ class Pagegen {
 		// Save the entire widgets array back to the db.
 		return update_option( 'dashboard_widget_options', $opts );
 	}
-
 }
