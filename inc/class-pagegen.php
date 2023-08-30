@@ -71,7 +71,7 @@ class Pagegen {
 	 * Registers ChartJS.
 	 */
 	public function admin_enqueue_scripts() {
-		wp_register_script( 'chartjs', 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js', array(), '2.7.3', true );
+		wp_register_script( 'chartjs', 'https://cdn.jsdelivr.net/npm/chart.js', array(), '4.4.0', true );
 	}
 
 	/**
