@@ -2,7 +2,8 @@
     "name": "emrikol/pagegen",
     "description": "Generates a graph in the WordPress adming showing historic page generation times.",
     "require": {
-        "php": ">=8.0"
+        "php": ">=8.0",
+        "automattic/vipwpcs": "^3.0"
     },
     "license": "GPL-2.0-or-later",
     "authors": [
@@ -19,6 +20,7 @@
     "require-dev": {
         "wp-coding-standards/wpcs": "^3.0",
         "dealerdirect/phpcodesniffer-composer-installer": "^0.7",
-        "phpcompatibility/phpcompatibility-wp": "*"
+        "phpcompatibility/phpcompatibility-wp": "*",
+        "vimeo/psalm": ">=3.11"
     }
 }

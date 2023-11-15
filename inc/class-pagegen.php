@@ -75,24 +75,50 @@ class Pagegen {
 	}
 
 	/**
-	 * Records data about page generation, and optionally creates the database table.
+	 * Creates the pagegen table.
+	 *
+	 * @return void
 	 */
-	public function shutdown() {
+	private function create_table(): void {
+		$table_name = $wpdb->prefix . self::TABLE_NAME;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
+			$sql = "CREATE TABLE `$table_name` (
+				`ID` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				`timestamp` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				`time` float NOT NULL,
+				`url` text COLLATE {$wpdb->collate} NOT NULL,
+				`is_user_logged_in` tinyint(1) NOT NULL,
+				`is_admin` tinyint(1) NOT NULL,
+				`is_rest` tinyint(1) NOT NULL,
+				`is_cron` tinyint(1) NOT NULL,
+				PRIMARY KEY (`ID`),
+				KEY `timestamp` (`timestamp`)
+			) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET={$wpdb->charset} COLLATE={$wpdb->collate}";
+			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+			dbDelta( $sql );
+		}
+		update_option( 'pagegen_table', '1', false );
+	}
+
+	/**
+	 * Records data about page generation, and optionally creates the database table.
+	 *
+	 * TODO: Move table creating to activation hook.
+	 *
+	 * @return void
+	 */
+	public function shutdown(): void {
 		global $wpdb;
 
 		// Check to make sure we've got a table.  Create if not.
 		$has_pagegen_table = get_option( 'pagegen_table' );
 		$table_name        = $wpdb->prefix . self::TABLE_NAME;
-		if ( '1' !== $has_pagegen_table ) {
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) !== $table_name ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
-				$sql = "CREATE TABLE `$table_name` ( `ID` bigint(20) unsigned NOT NULL AUTO_INCREMENT, `timestamp` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, `time` float NOT NULL, `url` text COLLATE utf8mb4_unicode_ci NOT NULL, `is_user_logged_in` tinyint(1) NOT NULL, `is_admin` tinyint(1) NOT NULL, `is_rest` tinyint(1) NOT NULL,  `is_cron` tinyint(1) NOT NULL, PRIMARY KEY (`ID`), KEY `timestamp` (`timestamp`) ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
-				require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-				dbDelta( $sql );
-			}
-			update_option( 'pagegen_table', '1', false );
+		if ( '1' !== $has_pagegen_table ) {
+			self::create_table();
 		}
 
 		$data = array(
@@ -120,6 +146,10 @@ class Pagegen {
 		$datasets      = array();
 		$options       = self::get_dashboard_widget_options( self::WIDGET_ID );
 		$grand_average = array();
+
+		if ( empty( $options ) ) {
+			return;
+		}
 
 		foreach ( self::STATS_TYPES as $stats_type => $stats_type_data ) {
 			if ( ! $options[ $stats_type ] ) {
@@ -251,8 +281,11 @@ class Pagegen {
 	 */
 	public function pagegen_purge() {
 		global $wpdb;
+
+		$table_name = $wpdb->prefix . self::TABLE_NAME;
+
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$wpdb->query( 'DELETE FROM wp_pagegen WHERE UNIX_TIMESTAMP(timestamp) < UNIX_TIMESTAMP(NOW() - INTERVAL ( 24 * 30 ) HOUR)' );
+		$wpdb->query( "DELETE FROM $table_name WHERE UNIX_TIMESTAMP(timestamp) < UNIX_TIMESTAMP(NOW() - INTERVAL ( 24 * 30 ) HOUR)" );
 	}
 
 	/**
@@ -299,24 +332,19 @@ class Pagegen {
 	 * Gets the options for a widget of the specified name.
 	 *
 	 * @param string $widget_id Optional. If provided, will only get options for the specified widget.
-	 * @return array An associative array containing the widget's options and values. False if no opts.
+	 *
+	 * @return array An associative array containing the widget's options and values.
 	 */
-	public static function get_dashboard_widget_options( $widget_id = '' ) {
+	public static function get_dashboard_widget_options( string $widget_id = '' ): array {
 		// Fetch ALL dashboard widget options from the db.
-		$opts = get_option( 'dashboard_widget_options' );
-
-		// If no widget is specified, return everything.
-		if ( empty( $widget_id ) ) {
-			return $opts;
-		}
+		$opts = get_option( 'dashboard_widget_options', array() );
 
 		// If we request a widget and it exists, return it.
 		if ( isset( $opts[ $widget_id ] ) ) {
-			return $opts[ $widget_id ];
+			return (array) $opts[ $widget_id ];
 		}
 
-		// Something went wrong.
-		return false;
+		return $opts;
 	}
 
 	/**
@@ -324,25 +352,19 @@ class Pagegen {
 	 *
 	 * @param string $widget_id   The widget ID to grab options for.
 	 * @param string $option      The option to grab.
-	 * @param string $default_val The default option to return if none found.
+	 * @param mixed  $default_val The default option to return if none found.
 	 *
-	 * @return string
+	 * @return mixed
 	 */
-	public static function get_dashboard_widget_option( $widget_id, $option, $default_val = null ) {
-
+	public static function get_dashboard_widget_option( string $widget_id, string $option, $default_val = null ) {
 		$opts = self::get_dashboard_widget_options( $widget_id );
 
-		// If widget opts dont exist, return false.
-		if ( ! $opts ) {
+		// If widget opts don't exist, return default value.
+		if ( ! isset( $opts[ $option ] ) ) {
 			return $default_val;
 		}
 
-		// Otherwise fetch the option or use default.
-		if ( isset( $opts[ $option ] ) && ! empty( $opts[ $option ] ) ) {
-			return $opts[ $option ];
-		} else {
-			return ( isset( $default_val ) ) ? $default_val : false;
-		}
+		return $opts[ $option ];
 	}
 
 	/**
@@ -351,20 +373,21 @@ class Pagegen {
 	 *
 	 * @param string $widget_id The name of the widget being updated.
 	 * @param array  $args An associative array of options being saved.
+	 *
+	 * @return bool Whether or not options were updated.
 	 */
-	public static function update_dashboard_widget_options( $widget_id, $args = array() ) {
-		// Fetch ALL dashboard widget options from the db.
-		$opts = (array) get_option( 'dashboard_widget_options' );
-
-		// Get just our widget's options, or set empty array.
-		$w_opts = ( isset( $opts[ $widget_id ] ) ) ? $opts[ $widget_id ] : array();
-
-		if ( ! isset( $opts[ $widget_id ] ) ) {
-			$opts[] = $widget_id;
+	public static function update_dashboard_widget_options( string $widget_id, array $args = array() ): bool {
+		if ( empty( $widget_id ) ) {
+			return false;
 		}
-		$opts[ $widget_id ] = $args;
+
+		// Fetch ALL dashboard widget options.
+		$opts = self::get_dashboard_widget_options();
+
+		// Merge new args with existing ones.
+		$opts[ $widget_id ] = array_merge( (array) ( $opts[ $widget_id ] ?? array() ), $args );
 
 		// Save the entire widgets array back to the db.
-		return update_option( 'dashboard_widget_options', $opts );
+		return update_option( 'dashboard_widget_options', $opts, false );
 	}
 }

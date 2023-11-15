@@ -27,6 +27,7 @@
 		https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards -->
 	<rule ref="WordPress-Extra"/> <!-- Includes WordPress-Core -->
 	<rule ref="WordPress-Docs"/>
+	<rule ref="WordPress-VIP-Go"/>
 	<!-- For help in understanding this minimum_supported_wp_version:
 		https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards/wiki/Customizable-sniff-properties#setting-minimum-supported-wp-version-for-all-sniffs-in-one-go-wpcs-0140 -->
 	<config name="minimum_supported_wp_version" value="6.3"/>
